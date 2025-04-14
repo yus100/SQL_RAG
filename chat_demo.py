@@ -8,8 +8,6 @@ from langchain_community.tools.sql_database.tool import QuerySQLDatabaseTool
 from langgraph.graph import START, StateGraph
 import getpass
 import os
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
 
 load_dotenv()
 openai_api_key = os.getenv("OPENAI_API_KEY")
@@ -29,7 +27,7 @@ class State(TypedDict):
 if not os.environ.get("OPENAI_API_KEY"):
   os.environ["OPENAI_API_KEY"] = getpass.getpass("Enter API key for OpenAI: ")
 
-llm = init_chat_model("gpt-4-mini", model_provider="openai")
+llm = init_chat_model("gpt-4o-mini", model_provider="openai")
 
 query_prompt_template = hub.pull("langchain-ai/sql-query-system-prompt")
 
@@ -76,36 +74,7 @@ graph_builder = StateGraph(State).add_sequence(
 graph_builder.add_edge(START, "write_query")
 graph = graph_builder.compile()
 
-# Initialize FastAPI app
-app = FastAPI()
-
-# Request model
-class ChatRequest(BaseModel):
-    message: str
-
-# Response model
-class ChatResponse(BaseModel):
-    message: str
-
-@app.post("/chat", response_model=ChatResponse)
-async def chat_endpoint(request: ChatRequest):
-    try:
-        # Process the chat request through the graph
-        final_response = None
-        for step in graph.stream(
-            {"question": request.message}, stream_mode="updates"
-        ):
-            if "answer" in step:
-                final_response = step["answer"]
-        
-        if final_response is None:
-            raise HTTPException(status_code=500, detail="Failed to generate response")
-            
-        return ChatResponse(message=final_response)
-    
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+for step in graph.stream(
+    {"question": "How many employees are there?"}, stream_mode="updates"
+):
+    print(step)
