@@ -74,7 +74,24 @@ graph_builder = StateGraph(State).add_sequence(
 graph_builder.add_edge(START, "write_query")
 graph = graph_builder.compile()
 
+
+#tests
 for step in graph.stream(
     {"question": "How many employees are there?"}, stream_mode="updates"
+):
+    print(step)
+
+for step in graph.stream(
+    {"question": "Find the name of the artist with the most albums."}, stream_mode="updates"
+):
+    print(step)
+
+for step in graph.stream(
+    {"question": "What are the names of all the tables in the database?"}, stream_mode="updates"
+):
+    print(step)
+
+for step in graph.stream(
+    {"question": "What are the names of all the albums by the artist 'AC/DC'?"}, stream_mode="updates"
 ):
     print(step)
